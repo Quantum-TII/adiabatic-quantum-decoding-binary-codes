@@ -4,6 +4,12 @@ from sympy.matrices.dense import matrix2numpy
 from qibo import matrices, hamiltonians, models, callbacks
 import matplotlib.pyplot as plt
 import collections
+from dwave.system.samplers import DWaveSampler
+from dwave.system.composites import EmbeddingComposite
+from dwave.embedding.chain_strength import uniform_torque_compensation
+from greedy import SteepestDescentSolver
+import dimod
+import dwave.inspector
 
 
 def num2list(n, b):
@@ -23,8 +29,14 @@ def num2list(n, b):
 
 
 def f_3(x1, x2, x3):
-    """Function for the 3-7 nonlinear code.
+    """Function for the 3-7 nonlinear code. (ANF)
     
+    Args:
+        x1, x2, x3 (symbol): original bits for the function.
+        
+    Returns:
+        f (np.array): value for wach output bit of the nonlinear function.
+        
     """
     f = np.array([x1*x2*x3 - x1*x2 - x1*x3 + x1 - x2*x3 + x2, 
                   x1*x2 - x1*x3 + x3, 
@@ -37,8 +49,14 @@ def f_3(x1, x2, x3):
 
 
 def f_8(x1, x2, x3, x4, x5, x6, x7, x8):
-    """Function for the 8-16 nonlinear code.
+    """Function for the 8-16 nonlinear code. (ANF)
     
+    Args:
+        x1, ..., x8 (symbol): original bits for the function.
+        
+    Returns:
+        f (np.array): value for wach output bit of the nonlinear function.
+        
     """
     f = np.array([-2*x1*x2 + x1 + x2,
                   -2*x2*x3 + x2 + x3,
@@ -73,15 +91,28 @@ def r_8():
     return np.array([1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0])
 
 
-def to_ancilla(x1, x2, x3, a):
-    """How a 3-body interaction between x1, x2 and x3 is decomposed using an ancilla a.
+def gadget(x, y, a):
+    """Penalization function for the gadget substitution (x*y -> a).
+    
+    Args:
+        x, y (symbol): qubits to be substituted.
+        a (symbol): ancilla for the substitution.
+        
+    Returns:
+        penalization function.
     
     """
-    return 2*x2*a - 2*x2 + 2*x3*a - 2*x3 - x1*a + x1 -3*a + 3 + x2*x3
+    return 3*a + x*y - 2*x*a - 2*y*a
 
 
 def substitutions(sym):
     """Substitutions needed as 0 or 1 squared are equal to themselves.
+    
+    Args:
+        sym (list): list of qubits to reduce due to binary values.
+        
+    Returns:
+        s (list): instructions for the substitutions.
     
     """
     s = []
@@ -90,17 +121,16 @@ def substitutions(sym):
     return s
 
 
-def sym_dict_num(sym):
-    """Dictionary with each symbol and their corresponding qubit.
-    """
-    sym_num = {}
-    for i, s in enumerate(sym):
-        sym_num[s] = i
-    return sym_num
-
-
 def to_hamiltonian(f, r, sym):
-    """Tranform the non-linear functions into a hamiltonian that minimizes to find r and simplifies it.
+    """Tranform the non-linear functions into a hamiltonian that minimizes the energy to find r and simplifies it.
+    
+    Args:
+        f (np.array): functions defining the problem.
+        r (np.array): target bitstring.
+        sym (list): nstructions for the substitutions.
+    
+    Returns:
+        h (symbol): hamiltonian encoding the solution of the problem.
     
     """
     h = np.sum((f-r)**2)
@@ -109,143 +139,176 @@ def to_hamiltonian(f, r, sym):
     return h
 
 
-def to_two_body(h, ancillas, bits):
-    """Turns 3-body hamiltonian into a 2-body one by use of an ancilla.
+def separate_2_body(h, h_2):
+    """Separate a hamiltonian between 1 and 2-order terms and the rest.
+    
+    Args:
+        h (symbol): hamiltonian with more than 2-qubit terms.
+        h_2 (symbol): hamiltonian with up to 2-qubit terms.
+        
+    Returns:
+        h (symbol): updated hamiltonian with more than 2-qubit terms.
+        h_2 (symbol): updated hamiltonian with up to 2-qubit terms.
+        
+    """
+    terms_s, terms_c, overall_constant = symbolic_to_data(h)
+    for i in range(len(terms_s)):
+        if len(terms_s[i]) == 2:
+            h -= terms_c[i]*terms_s[i][0]*terms_s[i][1]
+            h_2 += terms_c[i]*terms_s[i][0]*terms_s[i][1]
+        elif len(terms_s[i]) == 1:
+            h -= terms_c[i]*terms_s[i][0]
+            h_2 += terms_c[i]*terms_s[i][0]
+    return h, h_2
+    
+
+def add_gadget(h, h_2, x1, x2, xa, control):
+    """Add the gadget ancillas.
+    
+    Args:
+        h (symbol): hamiltonian with more than 2-qubit terms.
+        h_2 (symbol): hamiltonian with up to 2-qubit terms.
+        x1, x2 (symbol): qubits to substitute.
+        xa (symbol): ancilla qubit introduced.
+        control (Bool): whether minimum control is desired.
+        
+    Returns:
+        h (symbol): hamiltonian with more than 2-qubit terms.
+        h_2 (symbol): hamiltonian with up to 2-qubit terms.
     
     """
+    h, h_2 = separate_2_body(h, h_2)
+    terms_s, terms_c, overall_constant = symbolic_to_data(h)
+    h = expand(h.subs(x1*x2, xa))
+    if control:
+        d_m = 0
+        d_p = 0
+        for j in range(len(terms_s)):
+            if x1 in terms_s[j] and x2 in terms_s[j]:
+                if terms_c[j] < 0:
+                    d_m += -terms_c[j]
+                else:
+                    d_p += terms_c[j]
+        h += (1+max(d_m, d_p))*gadget(x1, x2, xa)
+    else:
+        for j in range(len(terms_s)):
+            if x1 in terms_s[j] and x2 in terms_s[j]:
+                h += (1+np.abs(terms_c[j]))*gadget(x1, x2, xa)
+    return h, h_2
+
+
+def to_gadget(h, x, ancillas, control):
+    """Function that decomposes a multi-qubit interaction hamiltonian into 2-qubit using ancillas.
+    
+    Args:
+        h (symbol): hamiltonian to decompose.
+        x (list): original variables.
+        ancillas (list): ancillas to use.
+        control (Bool): whether minimum control is desired.
+        
+    Returns:
+        h (symbol): Hamiltonian with up to 2-qubit interactions.
+        anc (int): number of ancillas used.
+        
+    """
+    h_2 = 0
     anc = 0
-    for i in reversed(range(3, bits+1)):
-        print()
-        print(f'Dealing with {i}-term interactions.')
-        terms_s, terms_c, overall_constant = symbolic_to_data(h)
-        print(f'Total terms in the hamiltonian: {len(terms_s)}')
-        for term in terms_s:
-            if len(term) == i:
-                xtemp1 = 1
-                #for j in range(i-2):
-                for j in range(int(i/3)):
-                #for j in range(int(i/2)):
-                    xtemp1 *= term[j]
-                xtemp2 = 1
-                #for j in range(i-2, i-1):
-                for j in range(int(i/3), 2*int(i/3)):
-                #for j in range(int(i/2), i-1):
-                    xtemp2 *= term[j]
-                xtemp3 = 1
-                #for j in range(i-1, i):
-                for j in range(2*int(i/3), i):
-                #for j in range(i-1, i):
-                    xtemp3 *= term[j]
-                h = expand(h.subs(xtemp1*xtemp2*xtemp3, to_ancilla(xtemp1, xtemp2, xtemp3, ancillas[anc])))
-                anc += 1
-                print(f'Added ancilla number {anc}')
-    print('Total ancillas used: {}\n'.format(anc))
-    return h, anc
-
-
-def to_pauli(h, sym, sym_z):
-    """Turn the hamiltonian into pauli matrices.
+    h, h_2 = add_gadget(h, h_2, x[0], x[1], ancillas[anc], control)
+    anc += 1
+    if len(ancillas) == 1:
+        return h+h_2, anc
+    h, h_2 = add_gadget(h, h_2, x[2], x[3], ancillas[anc], control)
+    anc += 1
+    h, h_2 = add_gadget(h, h_2, x[0], x[2], ancillas[anc], control)
+    anc += 1
+    h, h_2 = add_gadget(h, h_2, x[1], x[3], ancillas[anc], control)
+    anc += 1
+    h, h_2 = add_gadget(h, h_2, x[0], x[3], ancillas[anc], control)
+    anc += 1
+    h, h_2 = add_gadget(h, h_2, x[1], x[2], ancillas[anc], control)
+    anc += 1
     
-    """
-    s = []
-    for i in range(len(sym)):
-        s.append((sym[i], (1-sym_z[i])/2))
-    hz = h.subs(s)
-    hz = expand(hz)
-    return hz
-
-
-def m(qubits, n1, n2, m1, m2):
-    """Create the full matrix of a 2-body interaction between qubits n1 and n2.
+    h, h_2 = add_gadget(h, h_2, x[0+4], x[1+4], ancillas[anc], control)
+    anc += 1
+    h, h_2 = add_gadget(h, h_2, x[2+4], x[3+4], ancillas[anc], control)
+    anc += 1
+    h, h_2 = add_gadget(h, h_2, x[0+4], x[2+4], ancillas[anc], control)
+    anc += 1
+    h, h_2 = add_gadget(h, h_2, x[1+4], x[3+4], ancillas[anc], control)
+    anc += 1
+    h, h_2 = add_gadget(h, h_2, x[0+4], x[3+4], ancillas[anc], control)
+    anc += 1
+    h, h_2 = add_gadget(h, h_2, x[1+4], x[2+4], ancillas[anc], control)
+    anc += 1
     
-    """
-    m = 1
-    for i in range(qubits):
-        if i == n1:
-            m = np.kron(m, m1)
-        elif i == n2:
-            m = np.kron(m, m2)
-        else:
-            m = np.kron(m, matrices.I)
-    return m
-
-
-def sub_matrix(sym_z):
-    """Create the substitution scheme for the matrices. Important to substitute the 2-body terms first.
+    h, h_2 = add_gadget(h, h_2, x[0], x[9], ancillas[anc], control)
+    anc += 1
+    h, h_2 = add_gadget(h, h_2, x[1], x[9], ancillas[anc], control)
+    anc += 1
+    h, h_2 = add_gadget(h, h_2, x[2], x[8], ancillas[anc], control)
+    anc += 1
+    h, h_2 = add_gadget(h, h_2, x[3], x[8], ancillas[anc], control)
+    anc += 1
     
-    """
-    s = []
-    n = len(sym_z)
-    for i in range(n):
-        for j in range(i+1, n):
-            s.append((sym_z[i]*sym_z[j], Matrix(m(n, i, j, matrices.Z, matrices.Z))))
-    for i in range(n):
-        s.append((sym_z[i], Matrix(m(n, i, i, matrices.Z, matrices.Z))))
-    return s
+    h, h_2 = add_gadget(h, h_2, x[0+4], x[9+6], ancillas[anc], control)
+    anc += 1
+    h, h_2 = add_gadget(h, h_2, x[1+4], x[9+6], ancillas[anc], control)
+    anc += 1
+    h, h_2 = add_gadget(h, h_2, x[2+4], x[8+6], ancillas[anc], control)
+    anc += 1
+    h, h_2 = add_gadget(h, h_2, x[3+4], x[8+6], ancillas[anc], control)
+    anc += 1
+    
+    h, h_2 = add_gadget(h, h_2, x[8], x[9], ancillas[anc], control)
+    anc += 1
+    h, h_2 = add_gadget(h, h_2, x[8+6], x[9+6], ancillas[anc], control)
+    anc += 1
+    
+    return h+h_2, anc
 
 
-def to_matrix(h, sym_z):
-    """Turn the symbol hamiltonian into a numpy array.
+def check_interactions(h, high = False):
+    """Check the number of terms for all different order of interactions in a hamiltonian.
+    
+    Args:
+        h (symbol): hamiltonian to analyse the interactions.
+        high (bool): flag to print the highest order interactions.
+        
+    Returns:
+        terms (dict): dictionary with the different terms for each order of interactions.
     
     """
     terms_s, terms_c, overall_constant = symbolic_to_data(h)
-    n = len(sym_z)
-    hm = h.subs(sub_matrix(sym_z))
-    hm = hm.subs(overall_constant, overall_constant*Identity(2**n).as_mutable())
-    hm = hm.evalf()
-    hm = matrix2numpy(hm, dtype=np.complex128)
-    return hm
+    terms = {}
+    for i in range(len(terms_s)):
+        if len(terms_s[i]) not in terms.keys():
+            terms[len(terms_s[i])] = 0
+        terms[len(terms_s[i])] += 1
+    if high:
+        h = max(terms.keys())
+        for i in range(len(terms_s)):
+            if len(terms_s[i]) == h:
+                print(terms_s[i])
+        print()
+    return terms
 
 
-def h0(qubits):
-    """Initial hamiltonian for adiabatic evolution.
-    Args:
-        qubits (int): # of total qubits in the instance.
-
-    Return:
-        h0 (np.array): 2**qubits x 2**qubits initial Hamiltonian.
-    """
-    h0 = 0
-    for i in range(qubits):
-        h0 += 0.5*(np.eye(2**qubits)-m(qubits, i, i, matrices.X, matrices.X))
-    return h0
-
-
-def plot(qubits, ground, first, gap, dt, T):
-    """Get the first two eigenvalues and the gap energy
-    Args:
-        qubits (int): # of total qubits in the instance.
-        ground (list): ground state energy during the evolution.
-        first (list): first excited state during the evolution.
-        gap (list): gap energy during the evolution.
-        T (float): Final time for the schedue.
-        dt (float): time interval for the evolution.
-
-    Returns:
-        {}_qubits_energy.png: energy evolution of the ground and first excited state.
-        {}_qubits_gap_energy.png: gap evolution during the adiabatic process.
-    """
-    fig, ax = plt.subplots()
-    times = np.arange(0, T+dt, dt)
-    ax.plot(times, ground, label='ground state', color='C0')
-    ax.plot(times, first, label='first excited state', color='C1')
-    plt.ylabel('energy')
-    plt.xlabel('schedule')
-    plt.title('Energy during adiabatic evolution')
-    ax.legend()
-    fig.tight_layout()
-    plt.show()
-    fig.savefig('{}_bits_energy.png'.format(qubits), dpi=300, bbox_inches='tight')
-    fig, ax = plt.subplots()
-    ax.plot(times, gap, label='gap energy', color='C0')
-    plt.ylabel('energy')
-    plt.xlabel('schedule')
-    plt.title('Gap energy during adiabatic evolution')
-    ax.legend()
-    fig.tight_layout()
-    plt.show()
-    fig.savefig('{}_bits_gap.png'.format(qubits), dpi=300, bbox_inches='tight')
+def check_two_body(h):
+    """Check if given Hamiltonian only contains up to 2-body interactions.
     
+    Args:
+        h (symbol): Hamiltonian to be analysed.
+        
+    Returns:
+        ValueError: if there are terms with more than two body interactions.
+    
+    """
+    terms_s, terms_c, overall_constant = symbolic_to_data(h)
+    length = []
+    for i in range(len(terms_s)):
+        if len(terms_s[i]) > 2:
+            raise ValueError(f'Error! Hamiltonian with more than two-body interactions. Found at least a {len(terms_s[i])}-body interaction.')
+
     
 def symbolic_to_data(symbolic_hamiltonian):
     """Transforms a symbolic Hamiltonian to lists of every term.
@@ -254,8 +317,7 @@ def symbolic_to_data(symbolic_hamiltonian):
         symbolic_hamiltonian: The full Hamiltonian written with symbols.
     
     Returns:
-        A dictionary that maps pairs of targets to the corresponding 4x4
-        matrix that acts on this pair in the given ``symbolic_hamiltonian``.
+        matching list of the symbols in each term of the hamiltonian and the corresponding constant.
     """ 
     terms_s = []
     terms_c = []
@@ -285,20 +347,19 @@ def symbolic_to_data(symbolic_hamiltonian):
     return terms_s, terms_c, overall_constant
     
     
-def symbolic_to_dwave(symbolic_hamiltonian, symbol_mnum):
+def symbolic_to_dwave(symbolic_hamiltonian, symbol_num):
     """Transforms a symbolic Hamiltonian to a dictionary of targets and matrices.
     
     Works for Hamiltonians with one and two qubit terms only.
     
     Args:
         symbolic_hamiltonian: The full Hamiltonian written with symbols.
-        symbol_map: Dictionary that maps each symbol that appears in the 
-            Hamiltonian to a pair of (target, matrix).
-            For example {z1: (0, matrices.Z)}.
+        symbol_num: Dictionary that maps each symbol that appears in the 
+            Hamiltonian to its target.
     
     Returns:
-        A dictionary that maps pairs of targets to the corresponding 4x4
-        matrix that acts on this pair in the given ``symbolic_hamiltonian``.
+       Q (dict): Dictionary with the interactions to send to the DWAVE machine.
+       overall_constant (int): Constant that cannot be given to DWAVE machine.
     """ 
     Q = {}
     overall_constant = 0
@@ -321,173 +382,156 @@ def symbolic_to_dwave(symbolic_hamiltonian, symbol_mnum):
         if not symbols:
             overall_constant += constant
 
-        elif len(symbols) == 1:
+        elif len(symbols) == 1: 
             target = symbol_num[symbols[0]]
+            #print(symbols[0], target)
             Q[(target, target)] = constant
 
         elif len(symbols) == 2:
             target1 = symbol_num[symbols[0]]
             target2 = symbol_num[symbols[1]]
+            #print(symbols[0], target1)
+            #print(symbols[1], target2)
             Q[(target1, target2)] = constant
 
         else:
             raise ValueError("Only one and two qubit terms are allowed.")
     
     return Q, overall_constant
-    
-    
-def symbolic_to_dict(symbolic_hamiltonian, symbol_map):
-    """Transforms a symbolic Hamiltonian to a dictionary of targets and matrices.
-    
-    Works for Hamiltonians with one and two qubit terms only.
-    The two qubit terms should be sufficiently many so that every 
-    qubit appears as the first target at least once.
+
+
+def dwave(h, symbol_num, bits, T, chainstrength, numruns, greedy, inspect, repeat, iterations):
+    """Function to run the problem with the dwave hardware.
     
     Args:
-        symbolic_hamiltonian: The full Hamiltonian written with symbols.
-        symbol_map: Dictionary that maps each symbol that appears in the 
-            Hamiltonian to a pair of (target, matrix).
-            For example {z1: (0, matrices.Z)}.
-    
+        h (symbol): hamiltonian where the solution is encoded.
+        symbol_num (dict): dictionary with the pairings between symbols and qubits.
+        bits (int): number of bits of the initial bitstring.
+        T (float): Total annealing time.
+        chainstrength (float): Chainstrangth for device. Leave None if calculated automatically.
+        numruns (int): Number of samples to take from quantum computer.
+        greedy (Bool): process results using the greedy algorithm.
+        inspect (Bool): Open the dwave inspector.
+        repeat (Bool): Fix ancillas using repetition.
+        iterations (int): number of repetitions for the ancilla fixing.
+        
     Returns:
-        A dictionary that maps pairs of targets to the corresponding 4x4
-        matrix that acts on this pair in the given ``symbolic_hamiltonian``.
-    """ 
-    one_qubit_terms = dict()
-    two_qubit_terms = dict()
-    first_targets = dict()
-    overall_constant = 0
-    for term in symbolic_hamiltonian.args:
-        if not term.args:
-            expression = (term,)
-        else:
-            expression = term.args
-
-        symbols = [x for x in expression if x.is_symbol]
-        numbers = [x for x in expression if not x.is_symbol]
-
-        if len(numbers) > 1:
-            raise ValueError("Hamiltonian must be expanded before using this method.")
-        elif numbers:
-            constant = float(numbers[0])
-        else:
-            constant = 1
-
-        if not symbols:
-            overall_constant += constant
-
-        elif len(symbols) == 1:
-            target, matrix = symbol_map[symbols[0]]
-            one_qubit_terms[target] = constant * matrix
-
-        elif len(symbols) == 2:
-            target1, matrix1 = symbol_map[symbols[0]]
-            target2, matrix2 = symbol_map[symbols[1]]
-            if target1 in first_targets and target2 not in first_targets:
-                two_qubit_terms[(target2, target1)] = constant * np.kron(matrix2, matrix1)
-                first_targets[target2] = (target2, target1)
-            else:
-                two_qubit_terms[(target1, target2)] = constant * np.kron(matrix1, matrix2)
-                first_targets[target1] = (target1, target2)
-
-        else:
-            raise ValueError("Only one and two qubit terms are allowed.")
-
-    all_terms = dict(two_qubit_terms)
-    for target in one_qubit_terms.keys():
-        if target not in first_targets:
-            raise ValueError(f"Qubit {target} has not been used as the first target.")
-        pair = first_targets[target]
-        all_terms[pair] = np.kron(one_qubit_terms[target], matrices.I) + two_qubit_terms[pair]
-    
-    return all_terms, overall_constant
-
-
-def split_keys(full_dict):
-    """Splits a dictionary of terms to multiple dictionaries.
-    
-    Each qubit should not appear in more that one term in each 
-    dictionary to ensure commutation relations in the definition
-    of `TrotterHamiltonian`.
+        best_sample (list): bit positions of the best found solution.
+        best_energy (float): energy value associated to the found minimum.
+        
     """
-    all_pairs = set(full_dict.keys())
-    group_pairs = [set()]
-    group_singles = [set()]
-    for pair in all_pairs:
-        q0, q1 = pair
-        flag = True
-        for g, s in zip(group_pairs, group_singles):
-            if q0 not in s and q1 not in s:
-                s.add(q0)
-                s.add(q1)
-                g.add(pair)
-                flag = False
-                break
-        if flag:
-            group_pairs.append({pair})
-            group_singles.append({q0, q1})
-    return [{k: full_dict[k] for k in g}
-            for g in group_pairs]
-            
+    check_two_body(h)
+    Q, constant = symbolic_to_dwave(h, symbol_num)
+    model = dimod.BinaryQuadraticModel.from_qubo(Q, offset = 0.0)
+    if not chainstrength:
+        chainstrength = 0
+        for i in Q.values():
+            chainstrength += abs(i)
+        chainstrength *= 3/len(Q)
+        print(f'Automatic chain strength: {chainstrength}\n')
+    else:
+        print(f'Chosen chain strength: {chainstrength}\n')
+    sampler = EmbeddingComposite(DWaveSampler())
+    if greedy:
+        solver_greedy = SteepestDescentSolver()
+        sampleset = sampler.sample(model, chain_strength=chainstrength, num_reads=numruns, annealing_time=T, answer_mode='raw')
+        response = solver_greedy.sample(model, initial_states=sampleset)
+    else:
+        response = sampler.sample(model, chain_strength=chainstrength, num_reads=numruns, annealing_time=T, answer_mode='histogram')
+    record = response.record
+    order = np.argsort(record['energy'])
+    best_sample = record.sample[order[0]]
+    best_energy = record.energy[order[0]]+constant
+    print(f'Best result found:\n')
+    print(f'Relevant bits: {best_sample[:bits]}\n')
+    print(f'Ancillas: {best_sample[bits:]}\n')
+    print(f'With energy: {best_energy}\n')
+    print(f'The best {min(len(record.sample), bits)} samples found in the evolution are:\n')
+    for i in range(min(len(record.sample), bits)):
+        print(f'Bits: {record.sample[order[i]][:bits]}    Ancillas: {record.sample[order[i]][bits:]}    with energy: {record.energy[order[i]]+constant}\n')
+    if inspect:
+        dwave.inspector.show(response)
+    if repeat:
+        best_sample, best_energy = dwave_iterative(h, symbol_num, bits, T, chainstrength, numruns, iterations)
+    return best_sample, best_energy
 
-def symbolic_to_trotter(symbolic_hamiltonian, symbol_map):
-    """Transforms a symbolic Hamiltonian to a Trotter Hamiltonian.
-    
-    Works for Hamiltonians with one and two qubit terms only.
-    The two qubit terms should be sufficiently many so that every 
-    qubit appears as the first target at least once.
+
+def dwave_iterative(h, symbol_num, bits, T, chainstrength, numruns, iterations):
+    """Iterative method that fixes qubits that are thought to be found in the best position.
     
     Args:
-        symbolic_hamiltonian: The full Hamiltonian written with symbols.
-        symbol_map: Dictionary that maps each symbol that appears in the 
-            Hamiltonian to a pair of (target, matrix).
-            For example {z1: (0, matrices.Z)}.
-    
+        h (symbol): hamiltonian where the solution is encoded.
+        symbol_num (dict): dictionary with the pairings between symbols and qubits.
+        bits (int): number of bits of the initial bitstring.
+        T (float): Total annealing time.
+        chainstrength (float): Chainstrangth for device. Leave None if calculated automatically.
+        numruns (int): Number of samples to take from quantum computer.
+        iterations (int): number of repetitions for the ancilla fixing.
+        
     Returns:
-        A `TrotterHamiltonian` that implements the given `symbolic_hamiltonian`.
-    """ 
-    all_terms, constant = symbolic_to_dict(symbolic_hamiltonian, symbol_map)
-    ham_terms = {k: hamiltonians.Hamiltonian(2, v, numpy=True) for k, v in all_terms.items()}
-    groups = split_keys(ham_terms)
-    return hamiltonians.TrotterHamiltonian(*groups) + constant
-
-
-def h0t():
-    """Generate the 2 qubit Hamiltonian for Trotter evolution, equivalent to the intial Hamiltonian.
-    Returns:
-        h0t (Hamiltonian): 4 x 4 Hamiltonian used as a base for the initial Hamiltonian.
+        result (list): reconstructed best solution found after iterating.
+        h (float): energy of theh system using the result output.
+        
     """
-    m0 = 0.5 * np.kron(matrices.I - matrices.X, matrices.I)
-    return hamiltonians.Hamiltonian(2, m0, numpy=True)
-
-
-def h_null():
-    """Generate the 2 qubit Hamiltonian for Trotter evolution, equivalent to the intial Hamiltonian.
-    Returns:
-        h0t (Hamiltonian): 4 x 4 Hamiltonian used as a base for the initial Hamiltonian.
-    """
-    m0 = np.kron(matrices.I-matrices.I, matrices.I-matrices.I)
-    return hamiltonians.Hamiltonian(2, m0, numpy=True)
-
-
-def h0_parts(hp_parts):
-    done = []
-    h0_p = []
-    for dic in hp_parts:
-        dic2 = dic.copy()
-        for key in set(dic2.keys()):
-            if key[0] not in done:
-                dic2[key] = h0t()
-                done.append(key[0])
+    fix = []
+    out = []
+    for i in range(iterations):
+        c = bits
+        for j in range(bits, len(sym)):
+            if j in fix:
+                continue
             else:
-                dic2[key] = h_null()
-        h0_p.append(dic2)
-    return tuple(h0_p)
-                
-    
-def ground_state(nqubits):
-    """Returns |++...+> state to be used as the ground state of the easy Hamiltonian."""
-    import tensorflow as tf
-    from qibo.config import DTYPES
-    s = np.ones(2 ** nqubits) / np.sqrt(2 ** nqubits)
-    return tf.cast(s, dtype=DTYPES.get('DTYPECPX'))
+                a = True
+                b = record.sample[order[0]][c]
+                for k in range(min(len(record.sample), np.ceil(np.log2(len(sym))))):
+                    if b != record.sample[order[k]][c]:
+                        a = False
+                if a:
+                    fix.append(j)
+                    out.append(b)
+                c += 1
+        print(f'The same value was found in positions {fix} \n')
+        print(f'with values {out}.\n')
+        for j in range(len(fix)):
+            h = h.subs(sym[fix[j]], out[j])
+        terms = functions.check_interactions(h, high=False)
+        print(f'Total number of qubits needed for the next step: {len(sym)-len(fix)}.\n')
+        print('Number of terms for each k-body interactions after gadget aplication.\n')
+        print(terms, '\n')
+        Q, constant = functions.symbolic_to_dwave(h, symbol_num)
+        model = dimod.BinaryQuadraticModel.from_qubo(Q, offset = 0.0)
+        if not chainstrength:
+            chainstrength = 0
+            for i in Q.values():
+                chainstrength += abs(i)
+            chainstrength *= 3/len(Q)
+            print(f'Automatic chain strength: {chainstrength}\n')
+        else:
+            print(f'Chosen chain strength: {chainstrength}\n')
+        sampler = EmbeddingComposite(DWaveSampler())
+        response = sampler.sample(model, chain_strength=chainstrength, num_reads=numruns, annealing_time=T, answer_mode='histogram')
+        record = response.record
+        order = np.argsort(record['energy'])
+        best_sample = record.sample[order[0]]
+        best_energy = record.energy[order[0]]
+        print(f'Best result found: {best_sample}\n')
+        print(f'With energy: {best_energy+constant}\n')
+        print(f'The best {min(len(record.sample), bits)} samples found in the evolution are:\n')
+        for i in range(min(len(record.sample), bits)):
+            print(f'Result: {record.sample[order[i]]}    with energy: {record.energy[order[i]]+constant}\n')
+    print('Reconstructing state...\n')
+    c = 0
+    result = []
+    for i in range(len(sym)):
+        if i in fix:
+            result.append(out[fix.index(i)])
+        else:
+            result.append(best_sample[c])
+            c += 1
+    print(f'Reconstructed result:\n')
+    print(f'Relevant bits: {result[:bits]}\n')
+    print(f'Ancillas: {result[bits:]}\n')
+    for i in range(bits):
+        h = h.subs(sym[i], result[i])
+    print(f'With total energy: {h}\n')
+    return result, h
