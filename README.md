@@ -11,9 +11,9 @@ In this section we use a 8-16 code example to explain the procedure from the ANF
 Defining polynomials (ANF): 
 
 
-
+```math
 x = (x_1,...,x_8) \longrightarrow F =(f_1,...,f_{16})
-
+```
 f_{1}: x_1 + x_2
 
 f_{2}: x_2 + x_3
