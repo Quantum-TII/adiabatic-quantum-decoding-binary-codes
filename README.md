@@ -10,7 +10,7 @@ In this section we use a 8-16 code example to explain the procedure from the ANF
 
 Defining polynomials (ANF): 
 
-```
+
 
 x = (x_1,...,x_8) \longrightarrow F =(f_1,...,f_{16})
 
@@ -20,7 +20,7 @@ f_{2}: x_2 + x_3
 
 f_{3}: x_3 + x_4
 
-$f_{4}: x_4 + x_5$
+$`f_{4}: x_4 + x_5`$
 
 $f_{5}: x_5 + x_{6} x_{7} x_{8} + 1$
 
@@ -56,7 +56,7 @@ $w(e)=2$
 
 $y=F(x)+e=(1,1,0,0,1,1,0,0,0,1,1,0,0,0,0,0)$
 
-```
+
 
 First the change is applied to the original ANF function, to transform it into NNF. Then the problem Hamiltonian H_p = H_1 + ... + H_16 is constructed via the penalty.
 
