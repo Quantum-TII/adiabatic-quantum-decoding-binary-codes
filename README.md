@@ -125,9 +125,95 @@ The maximum number of ancillary qubits is needed only if we have one
 term in the ANF function that includes all members
 *x*<sub>1</sub>, ..., *x*<sub>*n*</sub>, which is not always the case.
 
-  [1]: #eq:ANFNNF
-  [Ancilla substitution graph]: ancillagraph.png
-</div>
+Here is a 16-32 linear code example:
 
-  [1]: #eq:ANFNNF
-  [2]: #eq:penalty
+Defining polynomials (ANF):
+
+*x* = (*x*<sub>1</sub>, ..., *x*<sub>16</sub>) → *F* = (*f*<sub>1</sub>, ..., *f*<sub>32</sub>)
+
+*f*<sub>1</sub> = *x*<sub>1</sub> + *x*<sub>2</sub> + *x*<sub>3</sub> + *x*<sub>6</sub> + *x*<sub>7</sub> + *x*<sub>10</sub> + *x*<sub>12</sub> + *x*<sub>16</sub>
+
+*f*<sub>2</sub> = *x*<sub>1</sub> + *x*<sub>2</sub> + *x*<sub>3</sub> + *x*<sub>5</sub> + *x*<sub>7</sub> + *x*<sub>8</sub> + *x*<sub>10</sub> + *x*<sub>11</sub> + *x*<sub>16</sub>
+
+*f*<sub>3</sub> = *x*<sub>3</sub> + *x*<sub>4</sub> + *x*<sub>5</sub> + *x*<sub>7</sub> + *x*<sub>8</sub> + *x*<sub>14</sub>
+
+*f*<sub>4</sub> = *x*<sub>4</sub> + *x*<sub>5</sub> + *x*<sub>8</sub> + *x*<sub>11</sub> + *x*<sub>13</sub> + *x*<sub>15</sub> + *x*<sub>16</sub>
+
+*f*<sub>5</sub> = *x*<sub>2</sub> + *x*<sub>3</sub> + *x*<sub>4</sub> + *x*<sub>7</sub> + *x*<sub>8</sub> + *x*<sub>12</sub> + *x*<sub>14</sub> + *x*<sub>16</sub>
+
+*f*<sub>6</sub> = *x*<sub>5</sub> + *x*<sub>6</sub> + *x*<sub>7</sub> + *x*<sub>8</sub> + *x*<sub>11</sub> + *x*<sub>12</sub> + *x*<sub>14</sub> + *x*<sub>16</sub>
+
+*f*<sub>7</sub> = *x*<sub>2</sub> + *x*<sub>4</sub> + *x*<sub>6</sub> + *x*<sub>7</sub> + *x*<sub>9</sub> + *x*<sub>10</sub> + *x*<sub>11</sub> + *x*<sub>12</sub> + *x*<sub>15</sub> + *x*<sub>16</sub>
+
+*f*<sub>8</sub> = *x*<sub>5</sub> + *x*<sub>7</sub> + *x*<sub>8</sub> + *x*<sub>9</sub> + *x*<sub>11</sub> + *x*<sub>12</sub> + *x*<sub>15</sub>
+
+*f*<sub>9</sub> = *x*<sub>1</sub> + *x*<sub>2</sub> + *x*<sub>5</sub> + *x*<sub>6</sub> + *x*<sub>9</sub> + *x*<sub>12</sub> + *x*<sub>14</sub>
+
+*f*<sub>10</sub> = *x*<sub>1</sub> + *x*<sub>2</sub> + *x*<sub>4</sub> + *x*<sub>5</sub> + *x*<sub>7</sub> + *x*<sub>8</sub> + *x*<sub>10</sub> + *x*<sub>11</sub> + *x*<sub>12</sub> + *x*<sub>14</sub> + *x*<sub>15</sub> + *x*<sub>16</sub>
+
+*f*<sub>11</sub> = *x*<sub>3</sub> + *x*<sub>4</sub> + *x*<sub>6</sub> + *x*<sub>8</sub> + *x*<sub>10</sub> + *x*<sub>12</sub> + *x*<sub>13</sub> + *x*<sub>15</sub> + *x*<sub>16</sub>
+
+*f*<sub>12</sub> = *x*<sub>1</sub> + *x*<sub>5</sub> + *x*<sub>8</sub> + *x*<sub>11</sub> + *x*<sub>13</sub> + *x*<sub>16</sub>
+
+*f*<sub>13</sub> = *x*<sub>2</sub> + *x*<sub>3</sub> + *x*<sub>6</sub> + *x*<sub>9</sub> + *x*<sub>12</sub> + *x*<sub>14</sub> + *x*<sub>15</sub>
+
+*f*<sub>14</sub> = *x*<sub>1</sub> + *x*<sub>2</sub> + *x*<sub>3</sub> + *x*<sub>4</sub> + *x*<sub>5</sub> + *x*<sub>7</sub>
+
+*f*<sub>15</sub> = *x*<sub>2</sub> + *x*<sub>3</sub> + *x*<sub>6</sub> + *x*<sub>8</sub> + *x*<sub>9</sub> + *x*<sub>12</sub> + *x*<sub>14</sub> + *x*<sub>16</sub>
+
+*f*<sub>16</sub> = *x*<sub>2</sub> + *x*<sub>4</sub> + *x*<sub>5</sub> + *x*<sub>6</sub> + *x*<sub>7</sub> + *x*<sub>13</sub> + *x*<sub>15</sub> + *x*<sub>16</sub>
+
+*f*<sub>17</sub> = *x*<sub>4</sub> + *x*<sub>8</sub> + *x*<sub>9</sub> + *x*<sub>11</sub> + *x*<sub>12</sub> + *x*<sub>13</sub> + *x*<sub>15</sub> + *x*<sub>16</sub>
+
+*f*<sub>18</sub> = *x*<sub>5</sub> + *x*<sub>6</sub> + *x*<sub>7</sub> + *x*<sub>10</sub> + *x*<sub>12</sub> + *x*<sub>13</sub> + *x*<sub>16</sub>
+
+*f*<sub>19</sub> = *x*<sub>2</sub> + *x*<sub>4</sub> + *x*<sub>5</sub> + *x*<sub>6</sub> + *x*<sub>7</sub> + *x*<sub>8</sub> + *x*<sub>11</sub> + *x*<sub>12</sub> + *x*<sub>14</sub> + *x*<sub>16</sub>
+
+*f*<sub>20</sub> = *x*<sub>2</sub> + *x*<sub>3</sub> + *x*<sub>7</sub> + *x*<sub>8</sub> + *x*<sub>12</sub> + *x*<sub>13</sub> + *x*<sub>14</sub> + *x*<sub>16</sub>
+
+*f*<sub>21</sub> = *x*<sub>3</sub> + *x*<sub>5</sub> + *x*<sub>7</sub> + *x*<sub>8</sub> + *x*<sub>10</sub> + *x*<sub>11</sub>
+
+*f*<sub>22</sub> = *x*<sub>2</sub> + *x*<sub>4</sub> + *x*<sub>5</sub> + *x*<sub>6</sub> + *x*<sub>8</sub> + *x*<sub>11</sub> + *x*<sub>12</sub> + *x*<sub>14</sub> + *x*<sub>15</sub> + *x*<sub>16</sub>
+
+*f*<sub>23</sub> = *x*<sub>2</sub> + *x*<sub>3</sub> + *x*<sub>4</sub> + *x*<sub>9</sub> + *x*<sub>10</sub> + *x*<sub>11</sub> + *x*<sub>13</sub> + *x*<sub>15</sub>
+
+*f*<sub>24</sub> = *x*<sub>2</sub> + *x*<sub>3</sub> + *x*<sub>4</sub> + *x*<sub>6</sub> + *x*<sub>8</sub> + *x*<sub>12</sub> + *x*<sub>13</sub> + *x*<sub>14</sub>
+
+*f*<sub>25</sub> = *x*<sub>1</sub> + *x*<sub>2</sub> + *x*<sub>3</sub> + *x*<sub>7</sub> + *x*<sub>8</sub> + *x*<sub>9</sub> + *x*<sub>10</sub> + *x*<sub>11</sub> + *x*<sub>12</sub> + *x*<sub>13</sub> + *x*<sub>15</sub> + *x*<sub>16</sub>
+
+*f*<sub>26</sub> = *x*<sub>1</sub> + *x*<sub>2</sub> + *x*<sub>5</sub> + *x*<sub>6</sub> + *x*<sub>7</sub> + *x*<sub>8</sub> + *x*<sub>9</sub> + *x*<sub>10</sub> + *x*<sub>11</sub> + *x*<sub>14</sub> + *x*<sub>15</sub>
+
+*f*<sub>27</sub> = *x*<sub>2</sub> + *x*<sub>4</sub> + *x*<sub>5</sub> + *x*<sub>6</sub> + *x*<sub>8</sub> + *x*<sub>9</sub> + *x*<sub>10</sub> + *x*<sub>11</sub> + *x*<sub>16</sub>
+
+*f*<sub>28</sub> = *x*<sub>5</sub> + *x*<sub>6</sub> + *x*<sub>7</sub> + *x*<sub>10</sub> + *x*<sub>11</sub> + *x*<sub>12</sub> + *x*<sub>13</sub> + *x*<sub>14</sub>
+
+*f*<sub>29</sub> = *x*<sub>1</sub> + *x*<sub>2</sub> + *x*<sub>3</sub> + *x*<sub>4</sub> + *x*<sub>5</sub> + *x*<sub>8</sub> + *x*<sub>11</sub> + *x*<sub>13</sub> + *x*<sub>14</sub> + *x*<sub>16</sub>
+
+*f*<sub>30</sub> = *x*<sub>2</sub> + *x*<sub>5</sub> + *x*<sub>6</sub> + *x*<sub>9</sub> + *x*<sub>10</sub> + *x*<sub>11</sub> + *x*<sub>13</sub> + *x*<sub>15</sub>
+
+*f*<sub>31</sub> = *x*<sub>1</sub> + *x*<sub>2</sub> + *x*<sub>3</sub> + *x*<sub>13</sub> + *x*<sub>14</sub> + *x*<sub>15</sub> + *x*<sub>16</sub>
+
+*f*<sub>32</sub> = *x*<sub>1</sub> + *x*<sub>3</sub> + *x*<sub>6</sub> + *x*<sub>8</sub> + *x*<sub>9</sub> + *x*<sub>10</sub> + *x*<sub>12</sub> + *x*<sub>13</sub> + *x*<sub>14</sub> + *x*<sub>15</sub> + *x*<sub>16</sub>
+
+*x* = (1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1)
+
+*F*(*x*) = (0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0,
+0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+
+*e* = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+*w*(*e*) = 2
+
+*y* = *F*(*x*) + *e* = (0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1,
+1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1)
+
+In this example, the total number of *x* is 16, but the maximum number
+of terms included in a function is *m* = 12 (for *f*<sub>10</sub> and
+*f*<sub>25</sub>).
+
+In order to solve any 16-32 code, $2^{\\frac{16+2}{2}}-2=510$ qubits is
+needed. But for this case, it can be reduced down to 401 qubits.
+
+The total number of qubits scales exponentially with *m*, with an upper
+limit $2^{\\frac{n+2}{2}}-2$.
