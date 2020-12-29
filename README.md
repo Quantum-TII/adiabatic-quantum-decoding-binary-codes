@@ -82,7 +82,7 @@ In order to reduce *H*<sub>*p*</sub> into 2-body interaction using a
 minimal amount of ancillary qubits, a special mapping inspired by graph
 is proposed.
 
-![Ancilla](https://octodex.github.com/images/yaktocat.png)
+![Ancilla](ancillagraph.png)
 
 Qubits are divided equally into two groups, within each they are fully
 connected. Each vertex represents a qubit and each edge represents an
