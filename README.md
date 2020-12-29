@@ -74,29 +74,5 @@ For example,
 
 </div>
 
-When the ANF function is developed into NNF, the recursive action of Eq.
-[\[eq:ANFNNF\]][1] can introduce all possible combination of products of
-*x*<sub>*n*</sub> in each function *f*<sub>*n*</sub>. Every possible
-interaction of qubits *x*<sub>1</sub>, ..., *x*<sub>8</sub> is appeared
-in *H*<sub>*p*</sub> since *f*<sub>8</sub> includes every terms.
-
-In order to reduce *H*<sub>*p*</sub> into 2-body interaction using a
-minimal amount of ancillary qubits, a special mapping inspired by graph
-is proposed.
-
-![Ancilla substitution graph][]
-
-Qubits are divided equally into two groups, within each they are fully
-connected. Each vertex represents a qubit and each edge represents an
-ancilla.
-
-For *n* qubits, if *H*<sub>*p*</sub> includes all possibilities for up
-to 3-qubit interaction. A total number of $\\frac{n(n+2)}{4}$ qubits is
-needed to represent the problem Hamiltonian if *n* is even
-($\\frac{(n+1)^2}{4}$ if *n* is odd).
-
-If *H*<sub>*p*</sub>
-
   [1]: #eq:ANFNNF
   [2]: #eq:penalty
-  [Ancilla substitution graph]: ancillagraph.png
