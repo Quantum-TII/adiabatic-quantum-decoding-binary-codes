@@ -233,8 +233,8 @@ In this example, the total number of *x* is 16, but the maximum number
 of terms included in a function is *m* = 12 (for *f*<sub>10</sub> and
 *f*<sub>25</sub>).
 
-In order to solve any 16-32 code, $2^{\\frac{16+2}{2}}-2=510$ qubits is
+In order to solve any 16-32 code, <p><span class="math inline">\(2^{\frac{16+2}{2}}-2=510\)</span></p> qubits is
 needed. But for this case, it can be reduced down to 401 qubits.
 
 The total number of qubits scales exponentially with *m*, with an upper
-limit $2^{\frac{n+2}{2}}-2$.
+limit $2^{\\frac{n+2}{2}}-2$.
