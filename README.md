@@ -233,7 +233,7 @@ In this example, the total number of *x* is 16, but the maximum number
 of terms included in a function is *m* = 12 (for *f*<sub>10</sub> and
 *f*<sub>25</sub>).
 
-In order to solve any 16-32 code, <img src="https://render.githubusercontent.com/render/math?math=e^{i \pi} = -1"> qubits is
+In order to solve any 16-32 code, <img src="https://render.githubusercontent.com/render/math?math=2^{\frac{16+2}{2}}-2=510"> qubits is
 needed. But for this case, it can be reduced down to 401 qubits.
 
 The total number of qubits scales exponentially with *m*, with an upper
