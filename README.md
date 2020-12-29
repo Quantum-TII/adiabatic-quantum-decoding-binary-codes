@@ -83,6 +83,7 @@ minimal amount of ancillary qubits, a special mapping inspired by graph
 is proposed.
 
 ![Ancilla](ancillagraph.png | width=48)
+<img src="ancillagraph.png" width="100">
 
 Qubits are divided equally into two groups, within each they are fully
 connected. Each vertex represents a qubit and each edge represents an
