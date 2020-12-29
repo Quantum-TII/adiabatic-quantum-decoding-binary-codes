@@ -99,26 +99,47 @@ combination in each graph if *n* is even
 ($3\\times 2^{\\frac{n-1}{2}}-2$ if *n* is odd).
 
 *x*<sub>1</sub>*x*<sub>2</sub> → *x*<sub>12</sub>
+
 *x*<sub>3</sub>*x*<sub>4</sub> → *x*<sub>34</sub>
+
 *x*<sub>1</sub>*x*<sub>3</sub> → *x*<sub>13</sub>
+
 *x*<sub>2</sub>*x*<sub>4</sub> → *x*<sub>24</sub>
+
 *x*<sub>1</sub>*x*<sub>4</sub> → *x*<sub>14</sub>
+
 *x*<sub>2</sub>*x*<sub>3</sub> → *x*<sub>23</sub>
+
 *x*<sub>5</sub>*x*<sub>6</sub> → *x*<sub>56</sub>
+
 *x*<sub>7</sub>*x*<sub>8</sub> → *x*<sub>78</sub>
+
 *x*<sub>5</sub>*x*<sub>7</sub> → *x*<sub>57</sub>
+
 *x*<sub>6</sub>*x*<sub>8</sub> → *x*<sub>68</sub>
+
 *x*<sub>5</sub>*x*<sub>8</sub> → *x*<sub>58</sub>
+
 *x*<sub>6</sub>*x*<sub>7</sub> → *x*<sub>67</sub>
+
 *x*<sub>1</sub>*x*<sub>34</sub> → *x*<sub>134</sub>
+
 *x*<sub>2</sub>*x*<sub>34</sub> → *x*<sub>234</sub>
+
 *x*<sub>3</sub>*x*<sub>12</sub> → *x*<sub>123</sub>
+
 *x*<sub>4</sub>*x*<sub>12</sub> → *x*<sub>124</sub>
+
 *x*<sub>5</sub>*x*<sub>78</sub> → *x*<sub>578</sub>
+
 *x*<sub>6</sub>*x*<sub>78</sub> → *x*<sub>678</sub>
+
 *x*<sub>7</sub>*x*<sub>56</sub> → *x*<sub>567</sub>
+
 *x*<sub>8</sub>*x*<sub>56</sub> → *x*<sub>568</sub>
+
 *x*<sub>12</sub>*x*<sub>34</sub> → *x*<sub>1234</sub>
+
 *x*<sub>56</sub>*x*<sub>78</sub> → *x*<sub>5678</sub>
 
 The maximum number of ancillary qubits is needed only if we have one
