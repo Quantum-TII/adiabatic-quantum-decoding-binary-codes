@@ -64,7 +64,7 @@ For example,
 
 <div class="center">
 
-*f*<sub>10</sub>(*N**N**F*) =  − 2*x*<sub>1</sub>*x*<sub>6</sub>*x*<sub>7</sub>*x*<sub>8</sub> + 4*x*<sub>1</sub>*x*<sub>6</sub>*x*<sub>7</sub> + 2*x*<sub>1</sub>*x*<sub>6</sub>*x*<sub>8</sub> − 2*x*<sub>1</sub>*x*<sub>6</sub> + 2*x*<sub>1</sub>*x*<sub>7</sub>*x*<sub>8</sub> − 2*x*<sub>1</sub>*x*<sub>7</sub> − 2*x*<sub>1</sub>*x*<sub>8</sub> + *x*<sub>1</sub> + *x*<sub>6</sub>*x*<sub>7</sub>*x*<sub>8</sub> − 2*x*<sub>6</sub>*x*<sub>7</sub> − *x*<sub>6</sub>*x*<sub>8</sub> + *x*<sub>6</sub> − *x*<sub>7</sub>*x*<sub>8</sub> + *x*<sub>7</sub> + *x*<sub>8</sub>
+*f*<sub>10</sub>(*NNF*) =  − 2*x*<sub>1</sub>*x*<sub>6</sub>*x*<sub>7</sub>*x*<sub>8</sub> + 4*x*<sub>1</sub>*x*<sub>6</sub>*x*<sub>7</sub> + 2*x*<sub>1</sub>*x*<sub>6</sub>*x*<sub>8</sub> − 2*x*<sub>1</sub>*x*<sub>6</sub> + 2*x*<sub>1</sub>*x*<sub>7</sub>*x*<sub>8</sub> − 2*x*<sub>1</sub>*x*<sub>7</sub> − 2*x*<sub>1</sub>*x*<sub>8</sub> + *x*<sub>1</sub> + *x*<sub>6</sub>*x*<sub>7</sub>*x*<sub>8</sub> − 2*x*<sub>6</sub>*x*<sub>7</sub> − *x*<sub>6</sub>*x*<sub>8</sub> + *x*<sub>6</sub> − *x*<sub>7</sub>*x*<sub>8</sub> + *x*<sub>7</sub> + *x*<sub>8</sub>
 
 </div>
 
