@@ -237,4 +237,4 @@ In order to solve any 16-32 code, $2^{\\frac{16+2}{2}}-2=510$ qubits is
 needed. But for this case, it can be reduced down to 401 qubits.
 
 The total number of qubits scales exponentially with *m*, with an upper
-limit $2^{\\frac{n+2}{2}}-2$.
+limit $2^{\frac{n+2}{2}}-2$.
