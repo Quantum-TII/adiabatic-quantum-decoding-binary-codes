@@ -82,8 +82,7 @@ In order to reduce *H*<sub>*p*</sub> into 2-body interaction using a
 minimal amount of ancillary qubits, a special mapping inspired by graph
 is proposed.
 
-![Ancilla](ancillagraph.png | width=48)
-<img src="https://github.com/Quantum-TII/hamming_codes/blob/master/ancillagraph.png" width="100">
+<img src="https://github.com/Quantum-TII/hamming_codes/blob/master/ancillagraph.png" width="400">
 
 Qubits are divided equally into two groups, within each they are fully
 connected. Each vertex represents a qubit and each edge represents an
