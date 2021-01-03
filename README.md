@@ -55,10 +55,10 @@ Defining polynomials (ANF):
 
 *y* = *F*(*x*) + *e* = (1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0)
 
-First the change Eq. [\[eq:ANFNNF\]][1] is applied to the original ANF
+First the change <img src="https://render.githubusercontent.com/render/math?math=(x_i + x_j)\mod{2} \longrightarrow x_i + x_j - 2 x_i\cdot x_j"> is applied to the original ANF
 function, to transform it into NNF. Then the problem Hamiltonian
 *H*<sub>*p*</sub> = *H*<sub>1</sub> + ... + *H*<sub>16</sub> is
-constructed via the penalty Eq. [\[eq:penalty\]][2].
+constructed via the penalty <img src="https://render.githubusercontent.com/render/math?math=H_p = \sum_{i=1}^m\left(f_i(x)-r_i\right)^2">.
 
 For example,
 
@@ -72,8 +72,7 @@ For example,
 
 *H*<sub>10</sub> = 2*x*<sub>1</sub>*x*<sub>6</sub>*x*<sub>7</sub>*x*<sub>8</sub> − 4*x*<sub>1</sub>*x*<sub>6</sub>*x*<sub>7</sub> − 2*x*<sub>1</sub>*x*<sub>6</sub>*x*<sub>8</sub> + 2*x*<sub>1</sub>*x*<sub>6</sub> − 2*x*<sub>1</sub>*x*<sub>7</sub>*x*<sub>8</sub> + 2*x*<sub>1</sub>*x*<sub>7</sub> + 2*x*<sub>1</sub>*x*<sub>8</sub> − *x*1 − *x*<sub>6</sub>*x*<sub>7</sub>*x*<sub>8</sub> + 2*x*<sub>6</sub>*x*<sub>7</sub> + *x*<sub>6</sub>*x*<sub>8</sub> − *x*<sub>6</sub> + *x*<sub>7</sub>*x*<sub>8</sub> − *x*<sub>7</sub> − *x*<sub>8</sub> + 1
 
-When the ANF function is developed into NNF, the recursive action of Eq.
-[\[eq:ANFNNF\]][1] can introduce all possible combination of products of
+When the ANF function is developed into NNF, the recursive action of <img src="https://render.githubusercontent.com/render/math?math=(x_i + x_j)\mod{2} \longrightarrow x_i + x_j - 2 x_i\cdot x_j"> can introduce all possible combination of products of
 *x*<sub>*n*</sub> in each function *f*<sub>*n*</sub>. Every possible
 interaction of qubits *x*<sub>1</sub>, ..., *x*<sub>8</sub> is appeared
 in *H*<sub>*p*</sub> since *f*<sub>8</sub> includes every terms.
