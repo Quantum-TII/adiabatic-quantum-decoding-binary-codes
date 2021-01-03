@@ -89,14 +89,14 @@ connected. Each vertex represents a qubit and each edge represents an
 ancilla.
 
 For *n* qubits, if *H*<sub>*p*</sub> includes all possibilities for up
-to 3-qubit interaction. A total number of $\\frac{n(n+2)}{4}$ qubits is
+to 3-qubit interaction. A total number of <img src="https://render.githubusercontent.com/render/math?math=\frac{n(n+2)}{4}"> qubits is
 needed to represent the problem Hamiltonian if *n* is even
-($\\frac{(n+1)^2}{4}$ if *n* is odd).
+(<img src="https://render.githubusercontent.com/render/math?math=\frac{(n+1)^2}{4}"> if *n* is odd).
 
 If *H*<sub>*p*</sub> has interaction up to *n* qubits, it would need up
-to $2^{\\frac{n+2}{2}}-2$ total qubits to represent all possible
+to <img src="https://render.githubusercontent.com/render/math?math=2^{\frac{n+2}{2}}-2"> total qubits to represent all possible
 combination in each graph if *n* is even
-($3\\times 2^{\\frac{n-1}{2}}-2$ if *n* is odd).
+(<img src="https://render.githubusercontent.com/render/math?math=3\times 2^{\frac{n-1}{2}}-2"> if *n* is odd).
 
 *x*<sub>1</sub>*x*<sub>2</sub> → *x*<sub>12</sub>
 
