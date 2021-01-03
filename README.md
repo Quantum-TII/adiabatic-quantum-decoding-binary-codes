@@ -237,4 +237,4 @@ In order to solve any 16-32 code, <img src="https://render.githubusercontent.com
 needed. But for this case, it can be reduced down to 401 qubits.
 
 The total number of qubits scales exponentially with *m*, with an upper
-limit <img src="https://render.githubusercontent.com/render/math?math=2^{\\frac{n+2}{2}}-2">.
+limit <img src="https://render.githubusercontent.com/render/math?math=2^{\frac{n+2}{2}}-2">.
