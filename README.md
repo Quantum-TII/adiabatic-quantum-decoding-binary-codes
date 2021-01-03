@@ -91,7 +91,7 @@ ancilla.
 For *n* qubits, if *H*<sub>*p*</sub> includes all possibilities for up
 to 3-qubit interaction. A total number of <img src="https://render.githubusercontent.com/render/math?math=\frac{n(n+2)}{4}"> qubits is
 needed to represent the problem Hamiltonian if *n* is even
-(<img src="https://render.githubusercontent.com/render/math?math=\frac{(n\plus1)^2}{4}"> if *n* is odd).
+(<img src="https://render.githubusercontent.com/render/math?math=\frac{(n+1)^2}{4}"> if *n* is odd).
 
 If *H*<sub>*p*</sub> has interaction up to *n* qubits, it would need up
 to <img src="https://render.githubusercontent.com/render/math?math=2^{\frac{n+2}{2}}-2"> total qubits to represent all possible
