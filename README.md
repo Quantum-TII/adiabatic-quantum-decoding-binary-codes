@@ -1,4 +1,4 @@
-# Solving linear and nonlinear codes using adiabatic evolution
+# Adiabatic quantum decoding of binary codes - Code
 
 This repository contains code to solve instances of 3-7 and 8-16 bit nonlinear codes using D-Wave devices as part of the paper **Adiabatic quantum decoding of binary codes**. This code is intended to run with an existing D-Wave account or through the IDE Workspaces provided by D-Wave Leap (https://cloud.dwavesys.com/leap/).
 
