@@ -25,6 +25,17 @@ Defining polynomials (ANF):
 *f*<sub>7</sub> : *x*<sub>1</sub>*x*<sub>3</sub> + *x*<sub>2</sub> + *x*<sub>3</sub> + 1
 
 
+*x* = (1, 1, 0)
+
+*F*(*x*) = (1, 1, 0, 1, 0, 0, 0)
+
+*e* = (1, 0, 0, 0, 0, 0, 0)
+
+*w*(*e*) = 1
+
+*y* = *F*(*x*) + *e* = (0, 1, 0, 1, 0, 0, 0)
+
+
 ### 8-16 nonlinear code example:
 
 Defining polynomials (ANF):
