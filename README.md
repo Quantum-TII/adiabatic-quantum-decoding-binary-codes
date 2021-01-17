@@ -4,7 +4,13 @@ This repository contains code to solve instances of 3-7 and 8-16 bit nonlinear c
 
 The code is prepared to decode two examples. An instance of a 3-7 nonlinear code, and an instance of a 8-16 nonlinear code. The specifications of both codes are detailen underneath:
 
-### 3-7 nonlinear code example:
+### 3-8 nonlinear code example:
+
+Defining polynomials (ANF):
+
+*x* = (*x*<sub>1</sub>, *x*<sub>3</sub>, *x*<sub>3</sub>) → *F* = (*f*<sub>1</sub>, ..., *f*<sub>8</sub>)
+
+*f*<sub>1</sub> : *x*<sub>1</sub>*x*<sub>2</sub>*x*<sub>3</sub> + *x*<sub>1</sub>*x*<sub>2</sub> + *x*<sub>1</sub>*x*<sub>3</sub> + *x*<sub>1</sub> + *x*<sub>2</sub>*x*<sub>3</sub> + *x*<sub>2</sub>
 
 ### 8-16 nonlinear code example:
 
