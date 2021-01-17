@@ -35,6 +35,7 @@ Defining polynomials (ANF):
 
 *y* = *F*(*x*) + *e* = (0, 1, 0, 1, 0, 0, 0)
 
+Only one ancilla is needed in this example to replace *x*<sub>1</sub>*x*<sub>2</sub>*x*<sub>3</sub>.
 
 ### 8-16 nonlinear code example:
 
