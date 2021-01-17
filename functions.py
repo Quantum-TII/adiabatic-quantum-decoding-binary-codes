@@ -1,7 +1,7 @@
 import numpy as np
 from sympy import symbols, expand, Matrix, Identity
 from sympy.matrices.dense import matrix2numpy
-from qibo import matrices, hamiltonians, models, callbacks
+#from qibo import matrices, hamiltonians, models, callbacks
 import matplotlib.pyplot as plt
 import collections
 from dwave.system.samplers import DWaveSampler
@@ -9,7 +9,8 @@ from dwave.system.composites import EmbeddingComposite
 from dwave.embedding.chain_strength import uniform_torque_compensation
 from greedy import SteepestDescentSolver
 import dimod
-import dwave.inspector
+import dwave.inspector as insp
+import matplotlib.pyplot as plt
 
 
 def num2list(n, b):
@@ -390,8 +391,6 @@ def symbolic_to_dwave(symbolic_hamiltonian, symbol_num):
         elif len(symbols) == 2:
             target1 = symbol_num[symbols[0]]
             target2 = symbol_num[symbols[1]]
-            #print(symbols[0], target1)
-            #print(symbols[1], target2)
             Q[(target1, target2)] = constant
 
         else:
@@ -400,17 +399,18 @@ def symbolic_to_dwave(symbolic_hamiltonian, symbol_num):
     return Q, overall_constant
 
 
-def dwave(h, symbol_num, bits, T, chainstrength, numruns, greedy, inspect, repeat, iterations):
+def dwave(h, h2, sym, symbol_num, bits, T, chainstrength, numruns, inspect, repeat, iterations):
     """Function to run the problem with the dwave hardware.
     
     Args:
         h (symbol): hamiltonian where the solution is encoded.
+        h2 (symbol): hamiltonian to recover final energy.
+        sym (list): symbols to perfom the substitution.
         symbol_num (dict): dictionary with the pairings between symbols and qubits.
         bits (int): number of bits of the initial bitstring.
         T (float): Total annealing time.
         chainstrength (float): Chainstrangth for device. Leave None if calculated automatically.
         numruns (int): Number of samples to take from quantum computer.
-        greedy (Bool): process results using the greedy algorithm.
         inspect (Bool): Open the dwave inspector.
         repeat (Bool): Fix ancillas using repetition.
         iterations (int): number of repetitions for the ancilla fixing.
@@ -432,12 +432,7 @@ def dwave(h, symbol_num, bits, T, chainstrength, numruns, greedy, inspect, repea
     else:
         print(f'Chosen chain strength: {chainstrength}\n')
     sampler = EmbeddingComposite(DWaveSampler())
-    if greedy:
-        solver_greedy = SteepestDescentSolver()
-        sampleset = sampler.sample(model, chain_strength=chainstrength, num_reads=numruns, annealing_time=T, answer_mode='raw')
-        response = solver_greedy.sample(model, initial_states=sampleset)
-    else:
-        response = sampler.sample(model, chain_strength=chainstrength, num_reads=numruns, annealing_time=T, answer_mode='histogram')
+    response = sampler.sample(model, chain_strength=chainstrength, num_reads=numruns, annealing_time=T, answer_mode='histogram')
     record = response.record
     order = np.argsort(record['energy'])
     best_sample = record.sample[order[0]]
@@ -446,21 +441,33 @@ def dwave(h, symbol_num, bits, T, chainstrength, numruns, greedy, inspect, repea
     print(f'Relevant bits: {best_sample[:bits]}\n')
     print(f'Ancillas: {best_sample[bits:]}\n')
     print(f'With energy: {best_energy}\n')
+    print(f'Occurences: {record.num_occurrences[order[0]]}\n')
     print(f'The best {min(len(record.sample), bits)} samples found in the evolution are:\n')
     for i in range(min(len(record.sample), bits)):
-        print(f'Bits: {record.sample[order[i]][:bits]}    Ancillas: {record.sample[order[i]][bits:]}    with energy: {record.energy[order[i]]+constant}\n')
+        print(f'Bits: {record.sample[order[i]][:bits]}    Ancillas: {record.sample[order[i]][bits:]}    with energy: {record.energy[order[i]]+constant}    num. occurences: {record.num_occurrences[order[i]]}\n')
     if inspect:
-        dwave.inspector.show(response)
+        insp.show(response)
+    energy = []
+    w = 0
+    for i in range(len(record.energy)):
+        for j in range(record.num_occurrences[order[i]]):
+            energy.append(record.energy[order[i]]+constant)
     if repeat:
-        best_sample, best_energy = dwave_iterative(h, symbol_num, bits, T, chainstrength, numruns, iterations)
-    return best_sample, best_energy
+        best_sample, best_energy, w = dwave_iterative(h, h2, sym, record, order, symbol_num, bits, T, chainstrength, numruns, iterations)
+        return best_sample, best_energy, w
+    else:
+        return best_sample, best_energy, w
 
 
-def dwave_iterative(h, symbol_num, bits, T, chainstrength, numruns, iterations):
+def dwave_iterative(h, h2, sym, record, order, symbol_num, bits, T, chainstrength, numruns, iterations):
     """Iterative method that fixes qubits that are thought to be found in the best position.
     
     Args:
         h (symbol): hamiltonian where the solution is encoded.
+        h2 (symbol): hamiltonian to recover final energy.
+        sym (list): symbols to perfom the substitution.
+        record: last result from dwave.
+        order (list): order from small to large energy.
         symbol_num (dict): dictionary with the pairings between symbols and qubits.
         bits (int): number of bits of the initial bitstring.
         T (float): Total annealing time.
@@ -471,11 +478,12 @@ def dwave_iterative(h, symbol_num, bits, T, chainstrength, numruns, iterations):
     Returns:
         result (list): reconstructed best solution found after iterating.
         h (float): energy of theh system using the result output.
+        w (int): iteration when the first solution is found.
         
     """
     fix = []
     out = []
-    for i in range(iterations):
+    for w in range(iterations):
         c = bits
         for j in range(bits, len(sym)):
             if j in fix:
@@ -483,7 +491,7 @@ def dwave_iterative(h, symbol_num, bits, T, chainstrength, numruns, iterations):
             else:
                 a = True
                 b = record.sample[order[0]][c]
-                for k in range(min(len(record.sample), np.ceil(np.log2(len(sym))))):
+                for k in range(min(len(record.sample), bits)):#, int(np.ceil(np.log2(len(sym)))))):
                     if b != record.sample[order[k]][c]:
                         a = False
                 if a:
@@ -494,11 +502,11 @@ def dwave_iterative(h, symbol_num, bits, T, chainstrength, numruns, iterations):
         print(f'with values {out}.\n')
         for j in range(len(fix)):
             h = h.subs(sym[fix[j]], out[j])
-        terms = functions.check_interactions(h, high=False)
+        terms = check_interactions(h, high=False)
         print(f'Total number of qubits needed for the next step: {len(sym)-len(fix)}.\n')
         print('Number of terms for each k-body interactions after gadget aplication.\n')
         print(terms, '\n')
-        Q, constant = functions.symbolic_to_dwave(h, symbol_num)
+        Q, constant = symbolic_to_dwave(h, symbol_num)
         model = dimod.BinaryQuadraticModel.from_qubo(Q, offset = 0.0)
         if not chainstrength:
             chainstrength = 0
@@ -516,9 +524,17 @@ def dwave_iterative(h, symbol_num, bits, T, chainstrength, numruns, iterations):
         best_energy = record.energy[order[0]]
         print(f'Best result found: {best_sample}\n')
         print(f'With energy: {best_energy+constant}\n')
-        print(f'The best {min(len(record.sample), bits)} samples found in the evolution are:\n')
-        for i in range(min(len(record.sample), bits)):
-            print(f'Result: {record.sample[order[i]]}    with energy: {record.energy[order[i]]+constant}\n')
+        print(f'Occurences: {record.num_occurrences[order[0]]}\n')
+        print(f'The best {min(len(record.sample), int(np.ceil(np.log2(len(sym)))))} samples found in the evolution are:\n')
+        for i in range(min(len(record.sample), bits)):#, int(np.ceil(np.log2(len(sym)))))):
+            print(f'Result: {record.sample[order[i]]}    with energy: {record.energy[order[i]]+constant}    num. occurences: {record.num_occurrences[order[i]]}\n')
+        energy = []
+        for i in range(len(record.energy)):
+            for j in range(record.num_occurrences[order[i]]):
+                energy.append(record.energy[order[i]]+constant)
+        if best_energy+constant == 2:
+            print('Solution found!\n')
+            break
     print('Reconstructing state...\n')
     c = 0
     result = []
@@ -532,6 +548,6 @@ def dwave_iterative(h, symbol_num, bits, T, chainstrength, numruns, iterations):
     print(f'Relevant bits: {result[:bits]}\n')
     print(f'Ancillas: {result[bits:]}\n')
     for i in range(bits):
-        h = h.subs(sym[i], result[i])
-    print(f'With total energy: {h}\n')
-    return result, h
+        h2 = h2.subs(sym[i], result[i])
+    print(f'With total energy: {h2}\n')
+    return result, h2, w

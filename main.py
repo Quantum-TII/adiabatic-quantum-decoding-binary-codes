@@ -5,7 +5,7 @@ import functions
 import argparse
 
 
-def main(bits, T, chainstrength, numruns, dwave, greedy, inspect, repeat, iterations):
+def main(bits, T, chainstrength, numruns, control, dwave, inspect, repeat, iterations, rep):
     """Adiabatic evolution for nonlinear functions.
 
     Args:
@@ -13,11 +13,12 @@ def main(bits, T, chainstrength, numruns, dwave, greedy, inspect, repeat, iterat
         T (float): Total annealing time.
         chainstrength (float): Chainstrangth for device. Leave None if calculated automatically.
         numruns (int): Number of samples to take from quantum computer.
+        control (Bool): less control issues on Hamiltonian.
         dwave (Bool): run everything on dwave.
-        greedy (Bool): process results using the greedy algorithm.
         inspect (Bool): Open the dwave inspector.
         repeat (Bool): Fix ancillas using repetition.
         iterations (int): number of repetitions for the ancilla fixing.
+        rep (int): repeat the whole process.
 
     -------------- if minimization is run via dwave -------------------
     Returns:
@@ -48,14 +49,21 @@ def main(bits, T, chainstrength, numruns, dwave, greedy, inspect, repeat, iterat
     print('Number of terms for each k-body interactions.\n')
     print(terms, '\n')
     print('Reducing the k-body interactions using ancillas.\n')
-    h2, anc = functions.to_gadget_ruge2(h, sym, ancillas, bits, control)
+    h2, anc = functions.to_gadget(h, sym, ancillas, control)
     terms = functions.check_interactions(h2, high=False)
     print(f'Total number of qubits needed for the 2-local hamiltonian encoding {bits} bits: {anc+bits}.\n')
     print('Number of terms for each k-body interactions after gadget aplication.\n')
     print(terms, '\n')
     
+    rep_needed = []
+    energies = []
     if dwave:
-        best_sample, best_energy = dwave(h2, symbol_num, bits, T, chainstrength, numruns, greedy, inspect, repeat, iterations)
+        for i in range(rep):
+            best_sample, best_energy, w = functions.dwave(h2, h, sym, symbol_num, bits, T, chainstrength, numruns, inspect, repeat, iterations)
+            energies.append(best_energy)
+            rep_needed.append(w+2)
+        print(f'Number of repetitions needed until solution is found: {rep_needed} \n')
+        print(f'With energies: {energies} \n')
         return best_sample, best_energy
 
 
@@ -65,10 +73,11 @@ if __name__ == "__main__":
     parser.add_argument("--T", default=20, type=float)
     parser.add_argument("--chainstrength", default=None, type=float)
     parser.add_argument("--numruns", default=500, type=int)
+    parser.add_argument("--control", action="store_true")
     parser.add_argument("--dwave", action="store_true")
-    parser.add_argument("--greedy", action="store_true")
     parser.add_argument("--inspect", action="store_true")
     parser.add_argument("--repeat", action="store_true")
     parser.add_argument("--iterations", default=5, type=int)
+    parser.add_argument("--rep", default=1, type=int)
     args = vars(parser.parse_args())
     main(**args)
