@@ -73,7 +73,7 @@ def main(bits, tru, pen, it, th,ins):
         tru_result, tru_best_energy, tru_it = tru_dwave.dwave_iterative(iterations=it, threshold=th, inspect=ins)
         tru_en_hist = tru_dwave.energies_histogram
 
-        savedata(tru_en_hist, title=f'direct_{bits}_bits_energies')
+        savedata(tru_en_hist, title=f'truncated_{bits}_bits_energies')
 
     if pen:
         penalization = penalization_embedding(bits, p, x, p_cnot=3, p_sol=2)
@@ -86,7 +86,7 @@ def main(bits, tru, pen, it, th,ins):
         pen_result, pen_best_energy, pen_it = pen_dwave.dwave_iterative(iterations=it, threshold=th, inspect=ins)
         pen_en_hist = pen_dwave.energies_histogram
 
-        savedata(pen_en_hist, title=f'penalization_{bits}_bits_energies')
+        savedata(pen_en_hist, title=f'penalty_{bits}_bits_energies')
 
 
 if __name__ == "__main__":

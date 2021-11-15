@@ -80,7 +80,7 @@ def main(qmax, tru, pen):
             tru_qubits[1].append(log_q)
             tru_qubits[2].append(phys_q)
 
-        savedata(tru_qubits, title=f'direct_num_qubits')
+        savedata(tru_qubits, title=f'truncated_num_qubits')
 
     if pen:
         pen_qubits = [[], [], []]
@@ -97,7 +97,7 @@ def main(qmax, tru, pen):
             pen_qubits[1].append(log_q)
             pen_qubits[2].append(phys_q)
 
-        savedata(pen_qubits, title=f'penalization_num_qubits')
+        savedata(pen_qubits, title=f'penalty_num_qubits')
 
 
 if __name__ == "__main__":
